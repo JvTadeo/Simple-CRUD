@@ -3,6 +3,7 @@ import { IAuth, IRegister } from "./auth.interface";
 import { AuthService } from "./auth.service";
 import { customLogger } from "@/utils/customLogger";
 import { HttpStatusCode } from "axios";
+import { TokenUtils } from "@/utils/tokenUtils";
 
 export class AuthController {
     private authService: AuthService;
@@ -13,6 +14,7 @@ export class AuthController {
         // Binds
         this.login = this.login.bind(this);
         this.register = this.register.bind(this);
+        this.validateToken = this.validateToken.bind(this);
     }
 
     public async login(req: Request, res: Response) {
@@ -68,5 +70,24 @@ export class AuthController {
             customLogger.error(error.message);
             res.status(HttpStatusCode.InternalServerError);
         })
+    }
+    public async validateToken(req: Request, res: Response) {        
+        const token = req.headers['authorization']?.split(' ')[1] as string || null;
+
+        if (token == null) {
+            return res.status(HttpStatusCode.Unauthorized).json({
+                message: 'No token provided'
+            })
+        }
+
+        const decodedToken : any = TokenUtils.verifyToken(token);
+
+        if (decodedToken == null) {
+            return res.status(HttpStatusCode.Unauthorized).json({
+                message: 'Token not valid.'
+            })
+        }
+
+        res.status(HttpStatusCode.Ok).json(token);
     }
 }
